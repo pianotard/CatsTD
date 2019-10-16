@@ -5,14 +5,12 @@ import java.util.ArrayList;
 
 public class MobPath {
 
-    List<Point> points = new ArrayList<>();
+    private final Point start;
+    List<Direction> directions = new ArrayList<>();
 
     public boolean hasIntersect(Rectangle bounds) {
-        for (int i = 0; i < this.points.size() - 1; i++) {
-            Point p1 = this.points.get(i);
-            Point p2 = this.points.get(i + 1);
-            PathBlock path = new PathBlock(p1, p2);
-            if (path.intersects(bounds)) {
+        for (Direction d : this.directions) {
+            if (d.intersects(bounds)) {
                 return true;
             }
         }
@@ -20,23 +18,34 @@ public class MobPath {
     }
 
     public Point getNextTick(Point currentLoc) {
-        for (int i = 0; i < this.points.size() - 1; i++) {
-            Point p1 = this.points.get(i);
-            if (p1.equals(currentLoc)) {
-                Point p2 = this.points.get(i + 1);
-                int dx = p2.x - p1.x;
-                int dy = p2.y - p1.y;
-                dx = dx == 0 ? 0 : dx / Math.abs(dx);
-                dy = dy == 0 ? 0 : dy/ Math.abs(dy);
-                return new Point(dx, dy);
+        for (Direction d : this.directions) {
+            if (d.contains(currentLoc)) {
+                return d.getNextTick(currentLoc);
             }
         }
         return new Point(0, 0);
     }
 
+    public Direction getNextDirection(Direction last) {
+        boolean found = false;
+        for (Direction d : this.directions) {
+            if (found) {
+                return d;
+            }
+            if (d.equals(last)) {
+                found = true;
+            }
+        }
+        return null;
+    }
+
+    public Direction getFirstDirection() {
+        return this.directions.get(0);
+    }
+
     public boolean atCorner(Point p) {
-        for (Point corner : this.points) {
-            if (corner.equals(p)) {
+        for (Direction d : this.directions) {
+            if (d.endsAt(p)) {
                 return true;
             }
         }
@@ -44,11 +53,11 @@ public class MobPath {
     }
 
     public Point getEndPoint() {
-        return this.points.get(this.points.size() - 1);
+        return this.directions.get(this.directions.size() - 1).getEndPoint();
     }
 
     public Point getSpawnPoint() {
-        return this.points.get(0);
+        return this.start;
     }
 
     public static MobPath start(Point p) {
@@ -59,17 +68,22 @@ public class MobPath {
     }
 
     public MobPath add(Point p) {
-        List<Point> ret = new ArrayList<>(this.points);
-        ret.add(p);
-        return new MobPath(ret);
+        List<Direction> ret = new ArrayList<>(this.directions);
+        if (this.directions.isEmpty()) {
+            ret.add(new Direction(this.start, p));
+        } else {
+            ret.add(new Direction(this.directions.get(this.directions.size() - 1).getEndPoint(), p));
+        }
+        return new MobPath(this.start, ret);
     }
 
-    private MobPath(List<Point> points) {
-        this.points = points;
+    private MobPath(Point start, List<Direction> directions) {
+        this.start = start;
+        this.directions = directions;
     }
 
     private MobPath(Point p) {
-        this.points.add(p);
+        this.start = p;
     }
 
     private static boolean exceedBounds(Point p) {

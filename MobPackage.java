@@ -5,11 +5,16 @@ public class MobPackage implements Comparable<MobPackage> {
     AbstractMob mob;
     MobPath path;
     int spawnTick;
-    Point movementDirection;
+    double timeSinceLastMove = 0;
+    Direction movementDirection;
 
     public MobPackage(AbstractMob mob, int spawnTick) {
         this.mob = mob;
         this.spawnTick = spawnTick;
+    }
+
+    public int getReward() {
+        return this.mob.getReward();
     }
 
     public int getAttack() {
@@ -30,10 +35,21 @@ public class MobPackage implements Comparable<MobPackage> {
     }
 
     public void move() {
+        if (this.mob.isPaused(this.timeSinceLastMove)) {
+            return;
+        }
+        this.timeSinceLastMove = 0;
         Point currentLoc = this.mob.getLocation();
-        this.movementDirection = this.path.atCorner(currentLoc) ? this.path.getNextTick(currentLoc)
-            : this.movementDirection;
-        this.mob.setLocation(currentLoc.x + movementDirection.x, currentLoc.y + movementDirection.y);
+        if (this.movementDirection == null) {
+            this.movementDirection = this.path.getFirstDirection();
+        }
+        this.movementDirection = this.movementDirection.endsAt(currentLoc) ? 
+            this.path.getNextDirection(this.movementDirection) : this.movementDirection;
+        if (this.movementDirection == null) {
+            return;
+        }
+        Point nextTick = this.movementDirection.getNextTick(currentLoc);
+        this.mob.setLocation(nextTick);
     }
 
     public void applyPath(MobPath path) {
@@ -41,8 +57,18 @@ public class MobPackage implements Comparable<MobPackage> {
         this.mob.setSpawn(path.getSpawnPoint());
     }
 
+    public void tick() {
+        if (this.mob.isPaused(this.timeSinceLastMove)) {
+            this.timeSinceLastMove += this.mob.getSpeed();
+        }
+    }
+
     public boolean willSpawn(int tick) {
         return this.spawnTick == tick;
+    }
+
+    public Point getCentre() {
+        return this.mob.getCentre();
     }
 
     public AbstractMob getMob() {
@@ -56,6 +82,8 @@ public class MobPackage implements Comparable<MobPackage> {
 
     @Override
     public String toString() {
-        return this.mob + " set to spawn at " + this.spawnTick;
+        Point currentLoc = this.mob.getLocation();
+        String coordinates = "(" + currentLoc.x + ", " + currentLoc.y + ")";
+        return this.mob + " set to spawn at tick " + this.spawnTick + " at " + coordinates;
     }
 }

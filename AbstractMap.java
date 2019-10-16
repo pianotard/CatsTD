@@ -1,13 +1,18 @@
 import java.awt.Rectangle;
-import java.awt.LayoutManager;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseEvent;
+import java.util.Optional;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import javax.swing.JLayeredPane;
-import javax.swing.Timer;
 
-public abstract class AbstractMap extends JLayeredPane implements ActionListener {
+public abstract class AbstractMap extends JLayeredPane 
+    implements Controllable, Canvas {
+
+    public static final Rectangle MAP_BOUNDS = new Rectangle(0, 0, 
+            CatsTD.WINDOW_WIDTH - TowerPalette.P_WIDTH - 15, CatsTD.WINDOW_HEIGHT - 30);
 
     protected MobPath mobPath;
     protected List<LevelPackage> levelPacks = new ArrayList<>();
@@ -17,72 +22,151 @@ public abstract class AbstractMap extends JLayeredPane implements ActionListener
     protected TowerPalette towerPalette = new TowerPalette();
     protected List<AbstractTower> placedTowers = new ArrayList<>();
 
-    protected int tick = 0;
-    protected Timer mobMoverTimer = new Timer(4, this);
-    protected List<MobPackage> spawnedMobs = new ArrayList<>();
+    protected Optional<AbstractTower> dragTower = Optional.empty();
+    protected MouseListener resetDragListener = new MouseListener() {
+        public void mouseEntered(MouseEvent e) {}
+        public void mouseExited(MouseEvent e) {}
+        public void mousePressed(MouseEvent e) {}
+        public void mouseReleased(MouseEvent e) {}
+        public void mouseClicked(MouseEvent e) {
+            Optional<AbstractTower> drag = AbstractMap.this.dragTower;
+            if (drag.isPresent()) {
+                AbstractMap.this.removeDragTower(drag.get());
+            }
+        }
+    };
 
-    public AbstractMap(LayoutManager lm) {
+    protected TickerButton tickerButton = new TickerButton(this);
+    protected boolean isSpedUp = false;
+    protected int tick = 0;
+    protected List<MobPackage> spawnedMobs = new ArrayList<>();
+    protected List<AbstractProjectile> flyingProjectiles = new ArrayList<>();
+
+    protected ExecutorService executor = Executors.newSingleThreadExecutor();
+    protected UIAsyncRunner runner = new UIAsyncRunner(this, 5);
+
+    public AbstractMap() {
         super();
         this.setBounds(new Rectangle(0, 0, CatsTD.WINDOW_WIDTH, CatsTD.WINDOW_HEIGHT));
         this.add(this.player);
-        this.add(this.towerPalette, JLayeredPane.POPUP_LAYER);
+        this.add(this.towerPalette, JLayeredPane.MODAL_LAYER);
+        this.add(this.tickerButton, JLayeredPane.MODAL_LAYER);
+        this.addMouseListener(this.resetDragListener);
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        LevelPackage levelPack = this.levelPacks.get(this.currentLevel - 1);
-        if (!levelPack.finishedSpawning()) {
-            MobPackage mobPack = levelPack.peek();
-            if (mobPack.willSpawn(this.tick)) {
-                levelPack.pop();
-                this.add(mobPack.mob);
-                this.spawnedMobs.add(mobPack);
-                this.repaint();
-            }
-        }
-        for (MobPackage mobPack : this.spawnedMobs) {
-            mobPack.move();
-            if (mobPack.exited()) {
-                this.remove(mobPack.mob);
-                this.repaint();
-                this.player.inflictDamage(mobPack.getAttack());
-            }
-        }
-        for (AbstractTower tower : this.placedTowers) {
-            tower.tick();
-            MobPackage inRadius = tower.findMob(this.spawnedMobs);
-            if (inRadius == null) {
-                continue;
-            }
-            tower.attemptAttack(inRadius);
-            if (inRadius.dead()) {
-                this.remove(inRadius.mob);
-                this.repaint();
-            }
-        }
-        this.spawnedMobs.removeIf(mp -> mp.exited());
-        this.spawnedMobs.removeIf(mp -> mp.dead());
-        this.tick++;
-        if (this.spawnedMobs.isEmpty()) {
-            this.mobMoverTimer.stop();
-            this.currentLevel++;
-            this.tick = 0;
-            System.out.println("AbstractMap de-spawned all mobs, Timer stopped");
-        }
+    public AbstractTower addDragTower(AbstractTower t) {
+        System.out.println("Drag tower done by: " + Thread.currentThread().getName());
+        this.dragTower = Optional.of(t);
+        this.add(t, JLayeredPane.MODAL_LAYER);
+        this.add(t.getAtkRadius());
+        this.repaint();
+        return t;
     }
 
+    @Override
+    public AbstractTower removeDragTower(AbstractTower t) {
+        this.remove(t);
+        this.repaint();
+        this.dragTower = Optional.empty();
+        return t;
+    }
+
+    @Override
     public AbstractTower add(AbstractTower t) {
-        if (!this.hasIntersect(t.getBounds())) {
+        if (!(this.hasIntersect(t.getBounds()) || t.outsideMap())) {
+            t.initProjectile();
             this.placedTowers.add(t);
-            super.add(t);
+            super.add(t, JLayeredPane.PALETTE_LAYER);
+            super.add(t.getAtkRadius());
             System.out.println("AbstractMap placed " + t);
+            this.player.payMoney(t.getCost());
             return t;
         } else {
             System.out.println("AbstractMap unable to place " + t);
+            System.out.println("Enter adjust mode");
+            t.adjustMode();
+            this.addDragTower(t);
             return null;
         }
     }
 
+    @Override
+    public AbstractTower remove(AbstractTower t) {
+        if (this.placedTowers.contains(t)) {
+            this.placedTowers.remove(t);
+        }
+        super.remove(t);
+        super.remove(t.getAtkRadius());
+        return t;
+    }
+
+    @Override
+    public AbstractTower getDragTower() {
+        return this.dragTower.get();
+    }
+
+    @Override
+    public boolean hasDragTower() {
+        return this.dragTower.isPresent();
+    }
+
+    public void resetAndIncreaseLevel() {
+        this.currentLevel++;
+        this.tick = 0;
+        this.tickerButton.setStart();
+        System.out.println("AbstractMap de-spawned all mobs, Executor stopped");
+    }
+
+    public void cleanUpAndTick() {
+        this.spawnedMobs.removeIf(mp -> mp.exited());
+        this.spawnedMobs.removeIf(mp -> mp.dead());
+        this.tick++;
+    }
+
+    public void givePlayerMoney(MobPackage mobPack) {
+        this.player.getMoney(mobPack.getReward());
+    }
+
+    public void damagePlayer(MobPackage mobPack) {
+        this.player.inflictDamage(mobPack.getAttack());    
+    }
+
+    public void despawnMob(MobPackage mobPack) {
+        this.remove(mobPack.mob);
+    }
+
+    public void spawnMob(MobPackage mobPack) {
+        this.add(mobPack.mob, JLayeredPane.POPUP_LAYER);
+        this.spawnedMobs.add(mobPack);
+    }
+
+    public int getTick() {
+        return this.tick;
+    }
+
+    public List<MobPackage> getSpawnedMobs() {
+        return this.spawnedMobs;
+    }
+
+    public List<AbstractTower> getPlacedTowers() {
+        return this.placedTowers;
+    }
+
+    public LevelPackage getLevelPack() {
+        return this.levelPacks.get(this.currentLevel - 1);
+    }
+
+    public boolean finishedLevel() {
+        return this.spawnedMobs.isEmpty() && this.getLevelPack().finishedSpawning(); 
+    }
+
+    @Override
+    public boolean playerCanAfford(AbstractTower t) {
+        return this.player.enoughMoney(t.getCost());
+    }
+
+    @Override
     public boolean hasIntersect(Rectangle bounds) {
         boolean pathClash = this.mobPath.hasIntersect(bounds);
         boolean towerClash = false;
@@ -98,11 +182,40 @@ public abstract class AbstractMap extends JLayeredPane implements ActionListener
         }
     }
 
+    @Override
+    public void repaintCanvas() {
+        this.repaint();
+    }
+
+    @Override
+    public boolean isSpedUp() {
+        return this.isSpedUp;
+    }
+
+    @Override
+    public void speedDown() {
+        if (!this.isSpedUp) {
+            return;
+        }
+        this.runner.setDelay(5);
+        this.isSpedUp = false;
+    }
+
+    @Override
+    public void speedUp() {
+        if (this.isSpedUp) {
+            return;
+        }
+        this.runner.setDelay(3);
+        this.isSpedUp = true;
+    }
+
+    @Override
     public void startLevel() {
         if (this.currentLevel <= this.levelPacks.size()) {
-            this.mobMoverTimer.start();
+            this.executor.submit(this.runner);
         } else {
-            System.out.println("AbstractMap no more levels!");
+            System.out.println("AbstractMap no more levels!");       
         }
     }
 }

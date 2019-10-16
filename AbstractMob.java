@@ -6,9 +6,11 @@ import javax.swing.JPanel;
 public abstract class AbstractMob extends JPanel {
 
     protected String name;
-    protected int msSpeedTick;
+    protected double speed;
     protected int hp;
     protected int atk;
+
+    protected int reward;
 
     public AbstractMob(LayoutManager lm) {
         super(lm);
@@ -18,6 +20,10 @@ public abstract class AbstractMob extends JPanel {
 
     public boolean dead() {
         return this.hp <= 0;
+    }
+
+    public int getReward() {
+        return this.reward;
     }
 
     public int getAttack() {
@@ -31,6 +37,19 @@ public abstract class AbstractMob extends JPanel {
     public void setSpawn(Point spawn) {
         Rectangle bounds = this.getBounds();
         this.setBounds(spawn.x, spawn.y, bounds.width, bounds.height);
+    }
+
+    public boolean isPaused(double timeElapsed) {
+        return timeElapsed - this.speed < 0;
+    }
+
+    public double getSpeed() {
+        return this.speed;
+    }
+
+    public Point getCentre() {
+        Rectangle bounds = this.getBounds();
+        return new Point(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     }
 
     @Override

@@ -6,7 +6,7 @@ import javax.swing.JPanel;
 public class TowerPalette extends JPanel {
    
     static final int P_WIDTH = 100;
-    static final int P_HEIGHT = 600;
+    static final int P_HEIGHT = CatsTD.WINDOW_HEIGHT;
     static final int ICON_DIM = 35;
     static final int ICON_GAP = 10;
 
@@ -31,5 +31,6 @@ public class TowerPalette extends JPanel {
             icon.setBounds(x, y, TowerPalette.ICON_DIM, TowerPalette.ICON_DIM);
             this.add(icon);
         }
+        this.repaint();
     }
 }
