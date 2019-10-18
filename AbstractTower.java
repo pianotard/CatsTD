@@ -8,15 +8,21 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.function.Supplier;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-public abstract class AbstractTower extends JLabel {
+public abstract class AbstractTower extends JLabel implements Transactable {
 
     protected String name;
+    protected String description;
     protected int cost;
+    protected int sellPrice;
+    protected Optional<Supplier<AbstractTower>> upgradePath = Optional.empty();
 
     protected Point centre;
     protected TowerAttackRadius atkRadius;
@@ -28,6 +34,8 @@ public abstract class AbstractTower extends JLabel {
     protected BufferedImage defaultBufferedImage;
     protected double angle = 0;
 
+    protected PlacedTowerMenu menu;
+
     private Point clicked;
     protected boolean adjustMode = false;
     protected MouseListener placedTowerListener = new MouseListener() {
@@ -37,7 +45,13 @@ public abstract class AbstractTower extends JLabel {
         public void mouseExited(MouseEvent e) {
             AbstractTower.this.hideAtkRadius();
         }
-        public void mouseClicked(MouseEvent e) {}
+        public void mouseClicked(MouseEvent e) {
+            Canvas parent = (Canvas) AbstractTower.this.getParent();
+            if (Arrays.asList(parent.getComponents()).contains(AbstractTower.this.menu)) {
+                return;
+            }
+            parent.addPlacedTowerMenu(AbstractTower.this.menu);
+        }
         public void mouseReleased(MouseEvent e) {}
         public void mousePressed(MouseEvent e) {}
     };
@@ -64,7 +78,7 @@ public abstract class AbstractTower extends JLabel {
             Point oldLoc = AbstractTower.this.getLocation();
             AbstractTower.this.setLocation(oldLoc.x + dx, oldLoc.y + dy);
             
-            AbstractMap parent = (AbstractMap) AbstractTower.this.getParent();
+            Canvas parent = (Canvas) AbstractTower.this.getParent();
             if (parent.hasIntersect(AbstractTower.this.getBounds())) {
                 AbstractTower.this.showRedRadius();
             } else {
@@ -82,6 +96,21 @@ public abstract class AbstractTower extends JLabel {
 
     public abstract AbstractTower getClone(int x, int y);
     public abstract Icon getRotatedIcon(int degree);
+
+    @Override
+    public void upgrade() {
+        if (!this.upgradePath.isPresent()) {
+            return;
+        }
+        Canvas parent = (Canvas) this.getParent();
+        parent.upgrade(this);
+    }
+
+    @Override
+    public void sell() {
+        Canvas parent = (Canvas) this.getParent();
+        parent.sell(this);
+    }
 
     @Override
     public void setLocation(int x, int y) {
@@ -169,8 +198,17 @@ public abstract class AbstractTower extends JLabel {
         return !AbstractMap.MAP_BOUNDS.contains(this.centre);
     }
 
+    @Override
+    public boolean upgradeable() {
+        return this.upgradePath.isPresent();
+    }
+
     public boolean hasIntersect(Rectangle r) {
         return this.getBounds().intersects(r);
+    }
+
+    protected void initMenu() {
+        this.menu = new PlacedTowerMenu(this);
     }
 
     protected void initRadius(int atkRange) {
@@ -182,10 +220,30 @@ public abstract class AbstractTower extends JLabel {
         this.projectile.setStartPoint(this.centre);
     }
 
+    public AbstractTower getUpgrade() {
+        return this.upgradePath.get().get();
+    }
+
+    @Override
+    public int getUpgradePrice() {
+        return this.upgradePath.get().get().cost;
+    }
+
+    @Override
+    public int getSellPrice() {
+        return this.sellPrice;
+    }
+
     public int getCost() {
         return this.cost;
     }
 
+    @Override
+    public String getDescription() {
+        return this.description;
+    }
+
+    @Override
     public BufferedImage getDefaultBufferedImage() {
         return this.defaultBufferedImage;
     }

@@ -1,4 +1,5 @@
 import java.awt.Rectangle;
+import java.awt.Component;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
 import java.util.Optional;
@@ -23,7 +24,7 @@ public abstract class AbstractMap extends JLayeredPane
     protected List<AbstractTower> placedTowers = new ArrayList<>();
 
     protected Optional<AbstractTower> dragTower = Optional.empty();
-    protected MouseListener resetDragListener = new MouseListener() {
+    protected MouseListener resetMapListener = new MouseListener() {
         public void mouseEntered(MouseEvent e) {}
         public void mouseExited(MouseEvent e) {}
         public void mousePressed(MouseEvent e) {}
@@ -33,8 +34,14 @@ public abstract class AbstractMap extends JLayeredPane
             if (drag.isPresent()) {
                 AbstractMap.this.removeDragTower(drag.get());
             }
+            Optional<PlacedTowerMenu> placedTowerMenu = AbstractMap.this.placedTowerMenu;
+            if (placedTowerMenu.isPresent()) {
+                AbstractMap.this.removePlacedTowerMenu(placedTowerMenu.get());
+            }
         }
     };
+
+    protected Optional<PlacedTowerMenu> placedTowerMenu = Optional.empty();
 
     protected TickerButton tickerButton = new TickerButton(this);
     protected boolean isSpedUp = false;
@@ -48,10 +55,25 @@ public abstract class AbstractMap extends JLayeredPane
     public AbstractMap() {
         super();
         this.setBounds(new Rectangle(0, 0, CatsTD.WINDOW_WIDTH, CatsTD.WINDOW_HEIGHT));
-        this.add(this.player);
+        this.add(this.player, JLayeredPane.MODAL_LAYER);
         this.add(this.towerPalette, JLayeredPane.MODAL_LAYER);
         this.add(this.tickerButton, JLayeredPane.MODAL_LAYER);
-        this.addMouseListener(this.resetDragListener);
+        this.addMouseListener(this.resetMapListener);
+    }
+
+    @Override
+    public PlacedTowerMenu addPlacedTowerMenu(PlacedTowerMenu menu) {
+        this.placedTowerMenu = Optional.of(menu);
+        super.add(menu, JLayeredPane.DRAG_LAYER);
+        return menu;
+    }
+
+    @Override
+    public PlacedTowerMenu removePlacedTowerMenu(PlacedTowerMenu menu) {
+        this.placedTowerMenu = Optional.empty();
+        super.remove(menu);
+        this.repaint();
+        return menu;
     }
 
     @Override
@@ -59,7 +81,7 @@ public abstract class AbstractMap extends JLayeredPane
         System.out.println("Drag tower done by: " + Thread.currentThread().getName());
         this.dragTower = Optional.of(t);
         this.add(t, JLayeredPane.MODAL_LAYER);
-        this.add(t.getAtkRadius());
+        this.add(t.getAtkRadius(), JLayeredPane.MODAL_LAYER);
         this.repaint();
         return t;
     }
@@ -78,7 +100,7 @@ public abstract class AbstractMap extends JLayeredPane
             t.initProjectile();
             this.placedTowers.add(t);
             super.add(t, JLayeredPane.PALETTE_LAYER);
-            super.add(t.getAtkRadius());
+            super.add(t.getAtkRadius(), JLayeredPane.PALETTE_LAYER);
             System.out.println("AbstractMap placed " + t);
             this.player.payMoney(t.getCost());
             return t;
@@ -98,7 +120,31 @@ public abstract class AbstractMap extends JLayeredPane
         }
         super.remove(t);
         super.remove(t.getAtkRadius());
+        if (this.placedTowerMenu.isPresent()) {
+            this.removePlacedTowerMenu(this.placedTowerMenu.get());
+        }
         return t;
+    }
+
+    @Override
+    public boolean upgrade(AbstractTower t) {
+        if (!t.upgradeable()) {
+            return false;
+        }
+        this.remove(t);
+        this.add(t.getUpgrade());
+        this.repaint();
+        return true;
+    }
+
+    @Override
+    public boolean sell(AbstractTower t) {
+        if (!this.placedTowers.contains(t)) {
+            return false;
+        }
+        this.remove(t);
+        this.player.getMoney(t.getSellPrice());
+        return true;
     }
 
     @Override
@@ -139,6 +185,11 @@ public abstract class AbstractMap extends JLayeredPane
     public void spawnMob(MobPackage mobPack) {
         this.add(mobPack.mob, JLayeredPane.POPUP_LAYER);
         this.spawnedMobs.add(mobPack);
+    }
+
+    @Override
+    public Component[] getComponents() {
+        return super.getComponents();
     }
 
     public int getTick() {

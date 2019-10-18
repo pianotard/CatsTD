@@ -15,6 +15,7 @@ public class CatsTD extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
         BasicCatTower.initImages();
+        IntermediateCatTower.initImages();
     }
 
     public void startLevel() {
