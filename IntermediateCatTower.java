@@ -1,31 +1,30 @@
-import java.util.Optional;
 import java.util.List;
 import java.util.ArrayList;
 import java.awt.Point;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-public class BasicCatTower extends AbstractTower {
-    
+public class IntermediateCatTower extends AbstractTower {
+
     private static final int TOWER_WIDTH = 40;
     private static final int TOWER_HEIGHT = 40;
-    private static final String IMAGE_PATH = "basic_cat_tower/basic_cat_tower";
+    private static final String IMAGE_PATH = "int_cat_tower/int_cat_tower";
     private static final List<Icon> IMAGES = new ArrayList<>();
 
-    public BasicCatTower(int x, int y) {
+    public IntermediateCatTower(int x, int y) {
         super();
-        this.name = "Basic Cat Tower";
-        this.description = "Tom the cat, the first cat Jerry ever got. He defends Jerry from the monsters under his bed.";
-        this.cost = 200;
-        this.sellPrice = 150;
-        this.upgradePath = Optional.of(() -> new IntermediateCatTower(x, y));
+        this.name = "Intermediate Cat Toewr";
+        this.description = "Tom has matured and sharpened his senses. He can now defend Jerry from the monsters above his bed.";
+        this.cost = 150;
+        this.sellPrice = 250;
         this.centre = new Point(x + TOWER_WIDTH / 2, y + TOWER_HEIGHT / 2);
         this.setBounds(x, y, TOWER_WIDTH, TOWER_HEIGHT);
-        this.msAtkDelay = 60;
+        this.msAtkDelay = 40;
         this.atkCoolDown = this.msAtkDelay;
-        this.atkDamage = 1;
-        this.initRadius(75);
-        this.defaultBufferedImage = UIUtil.readBufferedImage("basic_cat_tower/basic_cat_tower_1.png");
+        this.atkDamage = 2;
+        this.initRadius(150);
+        this.defaultBufferedImage = UIUtil.readBufferedImage("int_cat_tower/int_cat_tower_1.png");
+
         this.projectile = new BasicCatProjectile();
         this.setRotation(0);
 
@@ -34,18 +33,18 @@ public class BasicCatTower extends AbstractTower {
 
     @Override
     public Icon getRotatedIcon(int degree) {
-        return BasicCatTower.IMAGES.get(degree);
-    }      
+        return IntermediateCatTower.IMAGES.get(degree);
+    }
 
     @Override
     public AbstractTower getClone(int x, int y) {
-        return new BasicCatTower(x, y);
+        return new IntermediateCatTower(x, y);
     }
 
     public static void initImages() {
         for (int i = 0; i < 360; i++) {
-            BasicCatTower.IMAGES.add(
+            IntermediateCatTower.IMAGES.add(
                     new ImageIcon(UIUtil.readBufferedImage(IMAGE_PATH + "_" + i + ".png")));
-        } 
+        }
     }
 }

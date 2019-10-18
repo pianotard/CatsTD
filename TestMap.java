@@ -30,6 +30,14 @@ public class TestMap extends AbstractMap {
                 .addMob(new MouseMob(), 0, 20, 35));
         this.levelPacks.add(new LevelPackage(8)
                 .addMob(new MouseMob(), 0, 12, 50));
+        this.levelPacks.add(new LevelPackage(9)
+                .addMob(new MouseMob(), 0, 10, 40)
+                .addMob(new MouseMob(), 400, 20, 10));
+        this.levelPacks.add(new LevelPackage(10)
+                .addMob(new MouseMob(), 0, 10, 35)
+                .addMob(new MouseMob(), 350, 30, 10)
+                .addMob(new MouseMob(), 800)
+                .addMob(new MouseMob(), 850, 5, 10));
         this.applyPathToLevelPacks();
     }
 }
