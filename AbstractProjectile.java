@@ -32,7 +32,6 @@ public abstract class AbstractProjectile extends JLabel {
     private AbstractProjectile setTargetDirection(Direction direction) {
         this.directionToTarget = direction;
         this.setLocation(this.startPoint);
-
         return this;
     }
 

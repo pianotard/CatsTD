@@ -8,9 +8,13 @@ public class PathBlock {
     Point topLeft;
     Rectangle illegal;
 
-    public PathBlock(Point point) {
+    public PathBlock(Point point, int dim) {
         this.topLeft = point;
-        this.illegal = new Rectangle(point.x, point.y, PATH_WIDTH, PATH_WIDTH);
+        this.illegal = new Rectangle(point.x, point.y, dim, dim);
+    }
+
+    public PathBlock(Point point) {
+        this(point, PathBlock.PATH_WIDTH);
     }
 
     public boolean intersects(Rectangle r) {

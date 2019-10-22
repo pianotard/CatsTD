@@ -21,13 +21,15 @@ public class BasicCatTower extends AbstractTower {
         this.upgradePath = Optional.of(() -> new IntermediateCatTower(x, y));
         this.centre = new Point(x + TOWER_WIDTH / 2, y + TOWER_HEIGHT / 2);
         this.setBounds(x, y, TOWER_WIDTH, TOWER_HEIGHT);
-        this.msAtkDelay = 60;
-        this.atkCoolDown = this.msAtkDelay;
-        this.atkDamage = 1;
-        this.initRadius(75);
         this.defaultBufferedImage = UIUtil.readBufferedImage("basic_cat_tower/basic_cat_tower_1.png");
-        this.projectile = new BasicCatProjectile();
         this.setRotation(0);
+        
+        this.attack = AbstractAttack.ranged()
+            .setCentre(this.centre)
+            .setRadius(75)
+            .setProjectile(new BasicCatProjectile())
+            .setAtkCoolDown(60)
+            .assertElements();
 
         this.initMenu();
     }

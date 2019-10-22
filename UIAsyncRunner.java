@@ -35,19 +35,21 @@ public class UIAsyncRunner implements Runnable {
 
             for (AbstractTower tower : this.map.getPlacedTowers()) {
                 tower.tick();
-                MobPackage inRadius = tower.findMob(this.map.getSpawnedMobs());
-                if (inRadius == null) {
+                List<MobPackage> targets = tower.findTargets(this.map.getSpawnedMobs());
+                if (targets.isEmpty()) {
                     continue;
                 }
-                boolean attacked = tower.attemptAttack(inRadius);
+                boolean attacked = tower.attemptAttack(targets);
                 if (attacked) {
                     System.out.println("Init projectile");
-                    AbstractProjectile proj = tower.getProjectile().initTarget(inRadius);
+                    AbstractProjectile proj = tower.getProjectile().initTarget(targets.get(0));
                     tower.setRotation(proj.getDegrees());
                 }
-                if (inRadius.dead()) {
-                    this.map.despawnMob(inRadius);
-                    this.map.givePlayerMoney(inRadius);
+                for (MobPackage target : targets) {
+                    if (target.dead()) {
+                        this.map.despawnMob(target);
+                        this.map.givePlayerMoney(target);
+                    }
                 }
             }
             this.map.cleanUpAndTick();

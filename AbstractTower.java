@@ -1,7 +1,5 @@
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Container;
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -25,11 +23,7 @@ public abstract class AbstractTower extends JLabel implements Transactable {
     protected Optional<Supplier<AbstractTower>> upgradePath = Optional.empty();
 
     protected Point centre;
-    protected TowerAttackRadius atkRadius;
-    protected AbstractProjectile projectile;
-    protected int msAtkDelay;
-    protected int atkCoolDown;
-    protected int atkDamage;
+    protected AbstractAttack attack;
 
     protected BufferedImage defaultBufferedImage;
     protected double angle = 0;
@@ -117,7 +111,7 @@ public abstract class AbstractTower extends JLabel implements Transactable {
         Point oldLoc = this.getLocation();
         super.setLocation(x, y);
         this.centre = new Point(this.centre.x + x - oldLoc.x, this.centre.y + y - oldLoc.y);
-        this.atkRadius.setLocation(this.centre);
+        this.attack.setLocation(this.centre);
     }
 
     public void setRotation(int degree) {
@@ -139,7 +133,7 @@ public abstract class AbstractTower extends JLabel implements Transactable {
         this.removeMouseListener(this.placedTowerListener);
         this.addMouseListener(this.unplaceableListener);
         this.addMouseMotionListener(this.adjustListener);
-        this.atkRadius.setRed();
+        this.attack.showRedRadius();
         this.adjustMode = true;
     }
 
@@ -154,44 +148,27 @@ public abstract class AbstractTower extends JLabel implements Transactable {
     }
 
     public void showRedRadius() {
-        this.atkRadius.setRed();
+        this.attack.showRedRadius();
     }
 
     public void showAtkRadius() {
-        this.atkRadius.setDefaultColor();
+        this.attack.showAtkRadius();
     }
 
     public void hideAtkRadius() {
-        this.atkRadius.setTransparent();
+        this.attack.hideAtkRadius();
     }
 
     public void tick() {
-        if (this.atkCoolDown < this.msAtkDelay) {
-            this.atkCoolDown++;
-        }
+        this.attack.tick();
     }
 
-    public MobPackage findMob(List<MobPackage> spawnedMobs) {
-        for (MobPackage mobPack : spawnedMobs) {
-            Point mob = mobPack.getCentre();
-            if (this.centre.distance(mob) <= this.atkRadius.getRadius()) {
-                return mobPack;
-            }
-        }
-        return null;
+    public List<MobPackage> findTargets(List<MobPackage> spawnedMobs) {
+        return this.attack.findTargets(spawnedMobs);
     }
 
-    public boolean attemptAttack(MobPackage mobPack) {
-        if (this.atkCoolDown < this.msAtkDelay) {
-            return false;
-        }
-        Point mob = mobPack.getCentre();
-        if (this.centre.distance(mob) <= this.atkRadius.getRadius()) {
-            mobPack.inflictDamage(this.atkDamage);
-            this.atkCoolDown = 0;
-            return true;
-        }
-        return false;
+    public boolean attemptAttack(List<MobPackage> targets) {
+        return this.attack.attemptAttack(targets);
     }
 
     public boolean outsideMap() {
@@ -210,14 +187,14 @@ public abstract class AbstractTower extends JLabel implements Transactable {
     protected void initMenu() {
         this.menu = new PlacedTowerMenu(this);
     }
-
+/*
     protected void initRadius(int atkRange) {
         this.atkRadius = new TowerAttackRadius(this.centre, atkRange);
         this.atkRadius.setTransparent();
     }
-
+*/
     public void initProjectile() {
-        this.projectile.setStartPoint(this.centre);
+        this.attack.initProjectile();
     }
 
     public AbstractTower getUpgrade() {
@@ -249,11 +226,11 @@ public abstract class AbstractTower extends JLabel implements Transactable {
     }
     
     public TowerAttackRadius getAtkRadius() {
-        return this.atkRadius;
+        return this.attack.getAtkRadius();
     }
 
     public AbstractProjectile getProjectile() {
-        return this.projectile;
+        return this.attack.getProjectile();
     }
 
     @Override
