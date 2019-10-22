@@ -63,6 +63,10 @@ public class MobPackage implements Comparable<MobPackage> {
         }
     }
 
+    public boolean inLineOfFire(Direction lineOfFire) {
+        return lineOfFire.intersects(this.mob.getBounds(), this.mob.getBounds().width);
+    }
+
     public boolean willSpawn(int tick) {
         return this.spawnTick == tick;
     }
@@ -78,6 +82,18 @@ public class MobPackage implements Comparable<MobPackage> {
     @Override
     public int compareTo(MobPackage mp) {
         return this.spawnTick - mp.spawnTick;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof MobPackage) {
+            MobPackage mp = (MobPackage) o;
+            return this.mob.equals(mp.mob) && this.spawnTick == mp.spawnTick;
+        }
+        return false;
     }
 
     @Override

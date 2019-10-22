@@ -19,14 +19,17 @@ public class IntermediateCatTower extends AbstractTower {
         this.sellPrice = 250;
         this.centre = new Point(x + TOWER_WIDTH / 2, y + TOWER_HEIGHT / 2);
         this.setBounds(x, y, TOWER_WIDTH, TOWER_HEIGHT);
-        this.msAtkDelay = 40;
-        this.atkCoolDown = this.msAtkDelay;
-        this.atkDamage = 2;
-        this.initRadius(150);
         this.defaultBufferedImage = UIUtil.readBufferedImage("int_cat_tower/int_cat_tower_1.png");
 
-        this.projectile = new BasicCatProjectile();
         this.setRotation(0);
+        this.attack = AbstractAttack.ranged()
+            .setCentre(this.centre)
+            .setRadius(150)
+            .setProjectile(new BasicCatProjectile())
+            .setAtkCoolDown(40)
+            .setPierce(3)
+            .setDamage(2)
+            .assertElements();
 
         this.initMenu();
     }
