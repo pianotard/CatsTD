@@ -6,7 +6,7 @@ import javax.swing.JPanel;
 public abstract class AbstractMob extends JPanel {
 
     protected String name;
-    protected double speed;
+    protected int tickDelay;
     protected int hp;
     protected int atk;
 
@@ -38,13 +38,13 @@ public abstract class AbstractMob extends JPanel {
         Rectangle bounds = this.getBounds();
         this.setBounds(spawn.x, spawn.y, bounds.width, bounds.height);
     }
-
+/*
     public boolean isPaused(double timeElapsed) {
         return timeElapsed - this.speed < 0;
     }
-
-    public double getSpeed() {
-        return this.speed;
+*/
+    public int getTickDelay() {
+        return this.tickDelay;
     }
 
     public Point getCentre() {
