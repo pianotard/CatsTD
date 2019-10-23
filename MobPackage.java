@@ -1,16 +1,22 @@
 import java.awt.Point;
+import java.awt.geom.Point2D;
 
 public class MobPackage implements Comparable<MobPackage> {
     
     AbstractMob mob;
     MobPath path;
     int spawnTick;
-    double timeSinceLastMove = 0;
+    int moveCD;
     Direction movementDirection;
 
     public MobPackage(AbstractMob mob, int spawnTick) {
         this.mob = mob;
         this.spawnTick = spawnTick;
+        this.moveCD = mob.getTickDelay();
+    }
+
+    public Point2D getVelocity() {
+        return this.movementDirection.getVelocity(this.mob.getTickDelay());
     }
 
     public int getReward() {
@@ -35,10 +41,10 @@ public class MobPackage implements Comparable<MobPackage> {
     }
 
     public void move() {
-        if (this.mob.isPaused(this.timeSinceLastMove)) {
+        if (this.moveCD < this.mob.getTickDelay()) {
             return;
         }
-        this.timeSinceLastMove = 0;
+        this.moveCD = 0;
         Point currentLoc = this.mob.getLocation();
         if (this.movementDirection == null) {
             this.movementDirection = this.path.getFirstDirection();
@@ -58,8 +64,8 @@ public class MobPackage implements Comparable<MobPackage> {
     }
 
     public void tick() {
-        if (this.mob.isPaused(this.timeSinceLastMove)) {
-            this.timeSinceLastMove += this.mob.getSpeed();
+        if (this.moveCD < this.mob.getTickDelay()) {
+            this.moveCD++;
         }
     }
 

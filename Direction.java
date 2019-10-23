@@ -1,5 +1,6 @@
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.Point2D;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -17,8 +18,20 @@ public class Direction {
         return this.points.get(index + 1);
     }
 
+    public Point2D getVelocity(int tickDelay) {
+        double xDist = p2.x - p1.x;
+        double yDist = p2.y - p1.y;
+        double eDist = Math.sqrt(xDist * xDist + yDist * yDist);
+        double rx = xDist / (tickDelay * eDist);
+        double ry = yDist / (tickDelay * eDist);
+        return new Point2D.Double(rx, ry);
+    }
+
     public int getDegrees() {
-        return (int) Math.toDegrees(Math.atan2(p1.y - p2.y, p1.x - p2.x)) - 90;
+        int deg = (int) Math.toDegrees(Math.atan2(p1.y - p2.y, p1.x - p2.x)) - 90;
+        deg = deg > 360 ? deg - 360 : deg;
+        deg = deg < 0 ? deg + 360 : deg;
+        return deg;
     }
 
     public boolean intersects(Rectangle r) {

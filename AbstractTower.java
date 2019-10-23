@@ -115,8 +115,6 @@ public abstract class AbstractTower extends JLabel implements Transactable {
     }
 
     public void setRotation(int degree) {
-        degree = degree > 360 ? degree - 360 : degree;
-        degree = degree < 0 ? degree + 360 : degree;
         Icon image = this.getRotatedIcon(degree);
         int width = image.getIconWidth();
         int height = image.getIconHeight();
@@ -162,13 +160,13 @@ public abstract class AbstractTower extends JLabel implements Transactable {
     public void tick() {
         this.attack.tick();
     }
-
+/*
     public List<MobPackage> findTargets(List<MobPackage> spawnedMobs) {
         return this.attack.findTargets(spawnedMobs);
     }
-
-    public boolean attemptAttack(List<MobPackage> targets) {
-        return this.attack.attemptAttack(targets);
+*/
+    public Optional<AbstractProjectile> attemptAttack(List<MobPackage> spawnedMobs) {
+        return this.attack.attemptAttack(spawnedMobs);
     }
 
     public boolean outsideMap() {

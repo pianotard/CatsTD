@@ -25,10 +25,10 @@ public class IntermediateCatTower extends AbstractTower {
         this.attack = AbstractAttack.ranged()
             .setCentre(this.centre)
             .setRadius(150)
-            .setProjectile(new BasicCatProjectile())
+            .setProjectile(new BasicCatProjectile()
+                    .setPierce(3)
+                    .setDamage(2))
             .setAtkCoolDown(40)
-            .setPierce(3)
-            .setDamage(2)
             .assertElements();
 
         this.initMenu();

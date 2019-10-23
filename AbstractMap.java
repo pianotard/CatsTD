@@ -14,6 +14,8 @@ public abstract class AbstractMap extends JLayeredPane
 
     public static final Rectangle MAP_BOUNDS = new Rectangle(0, 0, 
             CatsTD.WINDOW_WIDTH - TowerPalette.P_WIDTH - 15, CatsTD.WINDOW_HEIGHT - 30);
+    private static final int DEFAULT_SPEED = 3;
+    private static final int FF_SPEED = 1;
 
     protected MobPath mobPath;
     protected List<LevelPackage> levelPacks = new ArrayList<>();
@@ -47,10 +49,10 @@ public abstract class AbstractMap extends JLayeredPane
     protected boolean isSpedUp = false;
     protected int tick = 0;
     protected List<MobPackage> spawnedMobs = new ArrayList<>();
-    protected List<AbstractProjectile> flyingProjectiles = new ArrayList<>();
+    protected List<AbstractProjectile> projectiles = new ArrayList<>();
 
     protected ExecutorService executor = Executors.newSingleThreadExecutor();
-    protected UIAsyncRunner runner = new UIAsyncRunner(this, 5);
+    protected UIAsyncRunner runner = new UIAsyncRunner(this, DEFAULT_SPEED);
 
     public AbstractMap() {
         super();
@@ -59,6 +61,17 @@ public abstract class AbstractMap extends JLayeredPane
         this.add(this.towerPalette, JLayeredPane.MODAL_LAYER);
         this.add(this.tickerButton, JLayeredPane.MODAL_LAYER);
         this.addMouseListener(this.resetMapListener);
+    }
+
+    public AbstractProjectile removeProjectile(AbstractProjectile proj) {
+        super.remove(proj);
+        return proj;
+    }
+
+    public AbstractProjectile addProjectile(AbstractProjectile proj) {
+        this.projectiles.add(proj);
+        super.add(proj, JLayeredPane.PALETTE_LAYER);
+        return proj;
     }
 
     @Override
@@ -161,12 +174,15 @@ public abstract class AbstractMap extends JLayeredPane
         this.currentLevel++;
         this.tick = 0;
         this.tickerButton.setStart();
+        this.projectiles.stream().forEach(p -> this.removeProjectile(p));
+        this.projectiles.clear();
         System.out.println("AbstractMap de-spawned all mobs, Executor stopped");
     }
 
     public void cleanUpAndTick() {
         this.spawnedMobs.removeIf(mp -> mp.exited());
         this.spawnedMobs.removeIf(mp -> mp.dead());
+        this.projectiles.removeIf(p -> p.exited());
         this.tick++;
     }
 
@@ -194,6 +210,10 @@ public abstract class AbstractMap extends JLayeredPane
 
     public int getTick() {
         return this.tick;
+    }
+
+    public List<AbstractProjectile> getProjectiles() {
+        return this.projectiles;
     }
 
     public List<MobPackage> getSpawnedMobs() {
@@ -248,7 +268,7 @@ public abstract class AbstractMap extends JLayeredPane
         if (!this.isSpedUp) {
             return;
         }
-        this.runner.setDelay(5);
+        this.runner.setDelay(DEFAULT_SPEED);
         this.isSpedUp = false;
     }
 
@@ -257,7 +277,7 @@ public abstract class AbstractMap extends JLayeredPane
         if (this.isSpedUp) {
             return;
         }
-        this.runner.setDelay(3);
+        this.runner.setDelay(FF_SPEED);
         this.isSpedUp = true;
     }
 
