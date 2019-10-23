@@ -38,6 +38,10 @@ public class TestMap extends AbstractMap {
                 .addMob(new MouseMob(), 350, 30, 10)
                 .addMob(new MouseMob(), 800)
                 .addMob(new MouseMob(), 850, 5, 10));
+        this.levelPacks.add(new LevelPackage(11)
+                .addMob(new MouseMob(), 0, 9, 40)
+                .addMob(new MouseMob(), 360, 10, 20)
+                .addMob(new MouseMob(), 560, 9, 40));
         this.applyPathToLevelPacks();
     }
 }

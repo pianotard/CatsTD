@@ -145,7 +145,9 @@ public abstract class AbstractMap extends JLayeredPane
             return false;
         }
         this.remove(t);
-        this.add(t.getUpgrade());
+        AbstractTower upgrade = t.getUpgrade();
+        this.add(upgrade);
+        upgrade.displayMenu();
         this.repaint();
         return true;
     }
@@ -180,9 +182,8 @@ public abstract class AbstractMap extends JLayeredPane
     }
 
     public void cleanUpAndTick() {
-        this.spawnedMobs.removeIf(mp -> mp.exited());
-        this.spawnedMobs.removeIf(mp -> mp.dead());
-        this.projectiles.removeIf(p -> p.exited());
+        this.spawnedMobs.removeIf(mp -> mp.exited() || mp.dead());
+        this.projectiles.removeIf(p -> p.exited() || p.exhausted());
         this.tick++;
     }
 

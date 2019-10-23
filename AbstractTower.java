@@ -40,11 +40,7 @@ public abstract class AbstractTower extends JLabel implements Transactable {
             AbstractTower.this.hideAtkRadius();
         }
         public void mouseClicked(MouseEvent e) {
-            Canvas parent = (Canvas) AbstractTower.this.getParent();
-            if (Arrays.asList(parent.getComponents()).contains(AbstractTower.this.menu)) {
-                return;
-            }
-            parent.addPlacedTowerMenu(AbstractTower.this.menu);
+            AbstractTower.this.displayMenu();
         }
         public void mouseReleased(MouseEvent e) {}
         public void mousePressed(MouseEvent e) {}
@@ -71,7 +67,7 @@ public abstract class AbstractTower extends JLabel implements Transactable {
             int dy = e.getY() - AbstractTower.this.clicked.y;
             Point oldLoc = AbstractTower.this.getLocation();
             AbstractTower.this.setLocation(oldLoc.x + dx, oldLoc.y + dy);
-            
+
             Canvas parent = (Canvas) AbstractTower.this.getParent();
             if (parent.hasIntersect(AbstractTower.this.getBounds())) {
                 AbstractTower.this.showRedRadius();
@@ -160,11 +156,7 @@ public abstract class AbstractTower extends JLabel implements Transactable {
     public void tick() {
         this.attack.tick();
     }
-/*
-    public List<MobPackage> findTargets(List<MobPackage> spawnedMobs) {
-        return this.attack.findTargets(spawnedMobs);
-    }
-*/
+
     public Optional<AbstractProjectile> attemptAttack(List<MobPackage> spawnedMobs) {
         return this.attack.attemptAttack(spawnedMobs);
     }
@@ -182,15 +174,18 @@ public abstract class AbstractTower extends JLabel implements Transactable {
         return this.getBounds().intersects(r);
     }
 
+    public void displayMenu() {
+        Canvas parent = (Canvas) this.getParent();
+        if (Arrays.asList(parent.getComponents()).contains(this.menu)) {
+            return;
+        }
+        parent.addPlacedTowerMenu(this.menu);
+    }
+
     protected void initMenu() {
         this.menu = new PlacedTowerMenu(this);
     }
-/*
-    protected void initRadius(int atkRange) {
-        this.atkRadius = new TowerAttackRadius(this.centre, atkRange);
-        this.atkRadius.setTransparent();
-    }
-*/
+
     public void initProjectile() {
         this.attack.initProjectile();
     }
@@ -222,7 +217,7 @@ public abstract class AbstractTower extends JLabel implements Transactable {
     public BufferedImage getDefaultBufferedImage() {
         return this.defaultBufferedImage;
     }
-    
+
     public TowerAttackRadius getAtkRadius() {
         return this.attack.getAtkRadius();
     }
